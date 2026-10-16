@@ -1,0 +1,90 @@
+"""Collect GIMP testability measurements.
+
+Usage:
+    python gimp_testability.py               # API numbers only (PSR + latest test report)
+    python gimp_testability.py path/to/gimp  # also scans a local clone (PTC + MTC)
+
+Clone: git clone --depth 1 https://gitlab.gnome.org/GNOME/gimp.git
+"""
+import json
+import re
+import sys
+import urllib.request
+from collections import Counter
+from pathlib import Path
+
+API = "https://gitlab.gnome.org/api/v4/projects/GNOME%2Fgimp"
+SINCE = "2026-07-16T00:00:00Z"  # start of measurement window
+
+
+def get(path):
+    req = urllib.request.Request(API + path, headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"})
+    with urllib.request.urlopen(req, timeout=30) as r:
+        return json.load(r)
+
+
+def pipeline_success_rate():
+    pipes, page = [], 1
+    while True:
+        batch = get(f"/pipelines?ref=master&updated_after={SINCE}&per_page=100&page={page}")
+        pipes += batch
+        if len(batch) < 100:
+            break
+        page += 1
+    counts = Counter((p["source"], p["status"]) for p in pipes)
+    print(f"\n== Pipeline Success Rate ({len(pipes)} pipelines since {SINCE}) ==")
+    for src in sorted({s for s, _ in counts}):
+        ok, fail, canc = counts[(src, "success")], counts[(src, "failed")], counts[(src, "canceled")]
+        rate = ok / (ok + fail) if ok + fail else 0
+        print(f"{src:10} success={ok:4} failed={fail:4} canceled={canc:4} PSR={rate:.1%}")
+
+    # Which jobs caused the failures
+    for src in ("push", "schedule"):
+        jobs = Counter()
+        for p in pipes:
+            if p["source"] == src and p["status"] == "failed":
+                for j in get(f"/pipelines/{p['id']}/jobs?scope[]=failed&per_page=100"):
+                    if not j["allow_failure"]:
+                        jobs[j["name"]] += 1
+        print(f"\nFailed jobs in failed {src} pipelines:")
+        for name, n in jobs.most_common():
+            print(f"  {n:3}  {name}")
+
+
+def latest_test_report():
+    p = get("/pipelines?ref=master&source=push&status=success&per_page=1")[0]
+    s = get(f"/pipelines/{p['id']}/test_report_summary")
+    print(f"\n== Test report, pipeline #{p['id']} ({p['sha'][:8]}, {p['created_at'][:10]}) ==")
+    for suite in s["test_suites"]:
+        print(f"{suite['name']:25} total={suite['total_count']} passed={suite['success_count']} "
+              f"failed={suite['failed_count']} skipped={suite['skipped_count']} time={suite['total_time']:.1f}s")
+
+
+def scan_clone(root):
+    root = Path(root)
+    ci = (root / ".gitlab-ci.yml").read_text()
+    print("\n== Platform Test Coverage (check by hand) ==")
+    print("Jobs/lines running the test suite:")
+    for i, line in enumerate(ci.splitlines(), 1):
+        if re.search(r"ninja test|meson test|RUN_TESTS", line):
+            print(f"  line {i}: {line.strip()}")
+    print("Build matrices (each entry = one built configuration):")
+    for m in re.finditer(r"(RUNNER|ARCH): \[([^\]]+)\]", ci):
+        print(f"  {m.group(0)}")
+
+    print("\n== Module Test Coverage (map files to modules by hand) ==")
+    for mb in sorted(root.rglob("meson.build")):
+        text = mb.read_text(errors="ignore")
+        if re.search(r"\btest\(", text):
+            disabled = re.findall(r"^#\s*'([\w-]+)'", text, re.M)
+            print(f"{mb.relative_to(root)}")
+            print(f"  test() calls: {len(re.findall(r'\btest\(', text))}")
+            if disabled:
+                print(f"  commented-out tests: {', '.join(disabled)}")
+
+
+if __name__ == "__main__":
+    latest_test_report()
+    pipeline_success_rate()
+    if len(sys.argv) > 1:
+        scan_clone(sys.argv[1])
