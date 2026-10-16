@@ -8,8 +8,7 @@ Everything here is used to produce the measurements in the report, so the number
 
 ```
 testability/
-  gimp_testability.py               measurement script
-  appendix-testability-script.tex   the script as a LaTeX appendix
+  gimp_testability.py   measurement script
 ```
 
 Folders for the other quality attributes are added as their scripts are written.
