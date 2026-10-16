@@ -1,0 +1,6 @@
+module,affected_modules,CIF,outgoing_dependencies,MIM
+Core,Config;Display;Plug-in interface;Tools,1.00,Config;Plug-in interface,0.50
+Display,Tools,0.25,Config;Core;Plug-in interface;Tools,0.00
+Tools,Display,0.25,Config;Core;Display,0.25
+Config,Core;Display;Plug-in interface;Tools,1.00,Core,0.75
+Plug-in interface,Config;Core;Display;Tools,1.00,Config;Core,0.50

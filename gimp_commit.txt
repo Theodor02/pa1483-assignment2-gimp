@@ -1,0 +1,17 @@
+GIMP commit: d8d30252dd7b3dace58233a1b8cfc87cabcd1a63
+Commit date: Thu Oct 15 14:18:00 2026 +0000
+Repo: https://github.com/GNOME/gimp (master)
+
+Reproduce (PowerShell, from GIMP source root):
+  git checkout d8d30252dd7b3dace58233a1b8cfc87cabcd1a63
+  py module_deps.py --no-tests -o deps.dot              # -> deps_edges.csv (347 edges)
+  py aggregate_modules.py deps_edges.csv                # -> cif_mim.csv (Table 2)
+  Rename-Item cif_mim.csv cif_mim_min1.csv
+
+Robustness check (dependency = at least 10 files):
+  py aggregate_modules.py deps_edges.csv --min 10
+  Rename-Item cif_mim.csv cif_mim_min10.csv
+
+Restore normal results and render the figure:
+  py aggregate_modules.py deps_edges.csv                # -> cif_mim.csv, module_edges.csv, decomposition.dot
+  dot -Tsvg decomposition.dot -o decomposition.svg      # requires Graphviz

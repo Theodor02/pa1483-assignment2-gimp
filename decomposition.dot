@@ -1,0 +1,24 @@
+digraph G {
+  graph [rankdir=TB, nodesep=0.9, ranksep=0.9, fontname="Helvetica", pad=0.3, labelloc=b, fontsize=11,
+         label="GIMP decomposition view — module relationships\n(edge label = «stereotype» (number of source files with #include))"];
+  node [shape=tab, style="filled,rounded", fontname="Helvetica-Bold", fontsize=14, penwidth=1.4, margin="0.3,0.15"];
+  edge [fontname="Helvetica", fontsize=11, arrowhead=vee, arrowsize=0.9, color="#333333"];
+  Core [label="Core\n(core, gegl, text, path,\npaint, operations)", fillcolor="#BBDEFB"];
+  Display [label="Display\n(display, widgets, propgui, gui,\nmenus, actions, dialogs)", fillcolor="#C8E6C9"];
+  Tools [label="Tools\n(tools)", fillcolor="#C8E6C9"];
+  Config [label="Config\n(config)", fillcolor="#E1BEE7"];
+  Plugin [label="Plug-in interface\n(plug-in, pdb, file, file-data,\nxcf)", fillcolor="#FFE0B2"];
+  {rank=same; Display; Tools}
+  Display -> Core [label=" «uses» (443)", penwidth=4];
+  Tools -> Core [label=" «uses» (116)", penwidth=2.2];
+  Display -> Config [label=" «uses» (111)", penwidth=2.2];
+  Plugin -> Core [label=" «uses» (107)", penwidth=2.2];
+  Tools -> Display [label=" «uses» (106)", penwidth=2.2, constraint=false];
+  Display -> Plugin [label=" «uses» (48)", penwidth=1.6];
+  Core -> Config [label=" «uses» (33)", penwidth=1.6];
+  Tools -> Config [label=" «uses» (30)", penwidth=1.6];
+  Display -> Tools [label="«dispatches events» (22)", style=dashed, color="#C62828", fontcolor="#C62828", constraint=false];
+  Plugin -> Config [label=" «uses» (10)", penwidth=1.2];
+  Config -> Core [label="«uses types» (7)", style=dashed, color="#C62828", fontcolor="#C62828"];
+  Core -> Plugin [label="«creates» (7)", style=dashed, color="#C62828", fontcolor="#C62828"];
+}

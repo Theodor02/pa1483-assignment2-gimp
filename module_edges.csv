@@ -1,0 +1,13 @@
+from,to,files
+Display,Core,443
+Tools,Core,116
+Display,Config,111
+Plug-in interface,Core,107
+Tools,Display,106
+Display,Plug-in interface,48
+Core,Config,33
+Tools,Config,30
+Display,Tools,22
+Plug-in interface,Config,10
+Config,Core,7
+Core,Plug-in interface,7
